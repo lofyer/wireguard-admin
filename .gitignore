@@ -2,4 +2,6 @@
 __pycache__/
 *.pyc
 data/
+wg-admin-data/
+wg-config/
 .env
