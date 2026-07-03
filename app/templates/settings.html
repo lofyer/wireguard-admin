@@ -2,18 +2,42 @@
 {% block title %}Settings - WireGuard Admin{% endblock %}
 {% block breadcrumbs %}<span>/</span> <span>Settings</span>{% endblock %}
 {% block content %}
-<h1>Settings</h1>
-<div class="card">
-  <table class="kv">
-    <tr><th>Interface</th><td>{{ settings.wg_interface }}</td></tr>
-    <tr><th>Server public key</th><td><code>{{ server_public }}</code></td></tr>
-    <tr><th>Endpoint host</th><td>{{ settings.wg_host }}</td></tr>
-    <tr><th>Listen port</th><td>{{ settings.wg_port }}</td></tr>
-    <tr><th>Subnet</th><td>{{ settings.wg_subnet }}</td></tr>
-    <tr><th>Client DNS</th><td>{{ settings.wg_dns }}</td></tr>
-    <tr><th>Client AllowedIPs</th><td>{{ settings.wg_allowed_ips }}</td></tr>
-    <tr><th>Keepalive</th><td>{{ settings.wg_persistent_keepalive }}s</td></tr>
-  </table>
-  <p class="muted">Settings are read from environment variables / .env and require a restart to change.</p>
+<h1 class="mb-6 text-2xl font-bold">Settings</h1>
+<div class="rounded-xl bg-white p-5 shadow-sm">
+  <dl class="divide-y divide-slate-100 text-sm">
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="text-slate-500">Interface</dt>
+      <dd class="font-medium">{{ settings.wg_interface }}</dd>
+    </div>
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="shrink-0 text-slate-500">Server public key</dt>
+      <dd class="break-all text-right font-mono text-xs">{{ server_public }}</dd>
+    </div>
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="text-slate-500">Endpoint host</dt>
+      <dd class="font-medium">{{ settings.wg_host }}</dd>
+    </div>
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="text-slate-500">Listen port</dt>
+      <dd class="font-medium">{{ settings.wg_port }}</dd>
+    </div>
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="text-slate-500">Subnet</dt>
+      <dd class="font-mono text-xs">{{ settings.wg_subnet }}</dd>
+    </div>
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="text-slate-500">Client DNS</dt>
+      <dd class="font-medium">{{ settings.wg_dns }}</dd>
+    </div>
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="text-slate-500">Client AllowedIPs</dt>
+      <dd class="font-mono text-xs">{{ settings.wg_allowed_ips }}</dd>
+    </div>
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="text-slate-500">Keepalive</dt>
+      <dd class="font-medium">{{ settings.wg_persistent_keepalive }}s</dd>
+    </div>
+  </dl>
+  <p class="mt-4 text-xs text-slate-400">Settings are read from environment variables / .env and require a restart to change.</p>
 </div>
 {% endblock %}

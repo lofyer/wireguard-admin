@@ -1,78 +1,165 @@
 {% extends "base.html" %}
 {% block title %}{{ peer.name }} - WireGuard Admin{% endblock %}
-{% block breadcrumbs %}<span>/</span> <a href="/peers">Peers</a> <span>/</span> <span>{{ peer.name }}</span>{% endblock %}
+{% block breadcrumbs %}<span>/</span> <a href="/peers" class="text-blue-600 hover:underline">Peers</a> <span>/</span> <span>{{ peer.name }}</span>{% endblock %}
 {% block content %}
-<h1>{{ peer.name }}</h1>
-<div class="cards">
-  <div class="card">
-    <h3>Details</h3>
-    <p>Address: {{ peer.address }}</p>
-    <p>Public key: <code>{{ peer.public_key }}</code></p>
-    <p>Enabled:
-      {% if peer.enabled %}<span class="badge ok">yes</span>
-      {% else %}<span class="badge err">no</span>{% endif %}
-    </p>
-    <p class="muted">Created {{ peer.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
-    {% if peer.expires_at %}<p class="muted">Expires {{ peer.expires_at.strftime("%Y-%m-%d %H:%M") }}</p>{% endif %}
-    <p>Usage: {{ peer.cum_total | fmt_bytes }}
-      {% if peer.quota_bytes %} / {{ peer.quota_bytes | fmt_bytes }}
-        {% if peer.over_quota %}<span class="badge err">over quota</span>{% endif %}
-      {% endif %}
-    </p>
-    <form method="post" action="/peers/{{ peer.id }}/update" class="stack">
-      <label class="muted">Note <input name="note" value="{{ peer.note }}"></label>
-      <label class="muted">DNS <input name="dns" value="{{ peer.dns }}" placeholder="server default"></label>
-      <label class="muted">Quota GiB
-        <input name="quota_gib" type="number" step="0.1" min="0" class="narrow"
-               value="{{ '%.1f' % (peer.quota_bytes / 1073741824) if peer.quota_bytes else '' }}" placeholder="0 = unlimited">
-      </label>
-      <button type="submit">Save</button>
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-bold">{{ peer.name }}</h1>
+  <div class="flex gap-2">
+    <form method="post" action="/peers/{{ peer.id }}/toggle">
+      <button type="submit"
+              class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
+        {{ "Disable" if peer.enabled else "Enable" }}
+      </button>
+    </form>
+    <form method="post" action="/peers/{{ peer.id }}/rotate"
+          onsubmit="return confirm('Rotate keys? The old client config stops working immediately.')">
+      <button type="submit"
+              class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
+        Rotate keys
+      </button>
+    </form>
+    <form method="post" action="/peers/{{ peer.id }}/reset-usage"
+          onsubmit="return confirm('Reset usage counters to zero?')">
+      <button type="submit"
+              class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
+        Reset usage
+      </button>
+    </form>
+    <form method="post" action="/peers/{{ peer.id }}/delete"
+          onsubmit="return confirm('Delete peer {{ peer.name }}?')">
+      <button type="submit"
+              class="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50">
+        Delete
+      </button>
     </form>
   </div>
-  <div class="card">
-    <h3>Live status</h3>
+</div>
+
+<div class="grid gap-4 lg:grid-cols-3">
+  <div class="rounded-xl bg-white p-5 shadow-sm">
+    <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Details</h3>
+    <dl class="space-y-2 text-sm">
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Address</dt>
+        <dd class="font-mono text-xs">{{ peer.address }}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500">Public key</dt>
+        <dd class="mt-1 break-all font-mono text-xs text-slate-600">{{ peer.public_key }}</dd>
+      </div>
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Enabled</dt>
+        <dd>
+          {% if peer.enabled %}
+          <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">yes</span>
+          {% else %}
+          <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">no</span>
+          {% endif %}
+        </dd>
+      </div>
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Created</dt>
+        <dd>{{ peer.created_at.strftime("%Y-%m-%d %H:%M") }}</dd>
+      </div>
+      {% if peer.expires_at %}
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Expires</dt>
+        <dd>{{ peer.expires_at.strftime("%Y-%m-%d %H:%M") }}</dd>
+      </div>
+      {% endif %}
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Usage</dt>
+        <dd>
+          {{ peer.cum_total | fmt_bytes }}
+          {% if peer.quota_bytes %} / {{ peer.quota_bytes | fmt_bytes }}
+            {% if peer.over_quota %}
+            <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">over quota</span>
+            {% endif %}
+          {% endif %}
+        </dd>
+      </div>
+    </dl>
+    <form method="post" action="/peers/{{ peer.id }}/update" class="mt-4 space-y-3 border-t border-slate-100 pt-4">
+      <label class="block text-sm font-medium text-slate-600">Note
+        <input name="note" value="{{ peer.note }}"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      </label>
+      <label class="block text-sm font-medium text-slate-600">DNS
+        <input name="dns" value="{{ peer.dns }}" placeholder="server default"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      </label>
+      <label class="block text-sm font-medium text-slate-600">Quota (GiB)
+        <input name="quota_gib" type="number" step="0.1" min="0" placeholder="unlimited"
+               value="{{ '%.1f' % (peer.quota_bytes / 1073741824) if peer.quota_bytes else '' }}"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      </label>
+      <button type="submit"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        Save
+      </button>
+    </form>
+  </div>
+
+  <div class="rounded-xl bg-white p-5 shadow-sm">
+    <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Live status</h3>
     {% if peer_status %}
-      <p>Status: {% if peer_status.online %}<span class="badge ok">online</span>{% else %}<span class="badge muted">offline</span>{% endif %}</p>
-      <p>Endpoint: {{ peer_status.endpoint or "-" }}</p>
-      <p>Handshake: {{ peer_status.latest_handshake.strftime("%Y-%m-%d %H:%M:%S") if peer_status.latest_handshake else "never" }}</p>
-      <p>RX {{ peer_status.rx_bytes | fmt_bytes }} / TX {{ peer_status.tx_bytes | fmt_bytes }}</p>
+    <dl class="space-y-2 text-sm">
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Status</dt>
+        <dd>
+          {% if peer_status.online %}
+          <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">online</span>
+          {% else %}
+          <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">offline</span>
+          {% endif %}
+        </dd>
+      </div>
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Endpoint</dt>
+        <dd class="font-mono text-xs">{{ peer_status.endpoint or "-" }}</dd>
+      </div>
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Handshake</dt>
+        <dd>{{ peer_status.latest_handshake.strftime("%Y-%m-%d %H:%M:%S") if peer_status.latest_handshake else "never" }}</dd>
+      </div>
+      <div class="flex justify-between gap-2">
+        <dt class="text-slate-500">Session traffic</dt>
+        <dd>RX {{ peer_status.rx_bytes | fmt_bytes }} / TX {{ peer_status.tx_bytes | fmt_bytes }}</dd>
+      </div>
+    </dl>
     {% else %}
-      <p class="muted">Not present on interface (disabled or interface down).</p>
+    <p class="text-sm text-slate-400">Not present on interface (disabled or interface down).</p>
     {% endif %}
   </div>
-  <div class="card">
-    <h3>Client config</h3>
-    <img src="/peers/{{ peer.id }}/qr" alt="QR code" class="qr">
-    <p><a href="/peers/{{ peer.id }}/config" class="button">Download .conf</a>
-       <button type="button" onclick="copyConfig()">Copy</button></p>
+
+  <div class="rounded-xl bg-white p-5 shadow-sm">
+    <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Client config</h3>
+    <img src="/peers/{{ peer.id }}/qr" alt="QR code" class="mx-auto w-48 rounded-lg border border-slate-200">
+    <div class="mt-4 flex justify-center gap-2">
+      <a href="/peers/{{ peer.id }}/config"
+         class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        Download .conf
+      </a>
+      <button type="button" onclick="copyConfig(this)"
+              class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+        Copy
+      </button>
+    </div>
   </div>
 </div>
 
-<div class="card config-card">
-  <h3>{{ peer.name }}.conf</h3>
-  <pre id="client-config">{{ client_config }}</pre>
+<div class="mt-4 rounded-xl bg-white p-5 shadow-sm">
+  <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">{{ peer.name }}.conf</h3>
+  <pre id="client-config" class="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs leading-relaxed text-slate-200">{{ client_config }}</pre>
 </div>
+
 <script>
-function copyConfig() {
-  navigator.clipboard.writeText(document.getElementById("client-config").textContent);
+function copyConfig(btn) {
+  navigator.clipboard.writeText(document.getElementById("client-config").textContent)
+    .then(() => {
+      btn.textContent = "Copied";
+      setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+    });
 }
 </script>
-
-<div class="actions-row">
-  <form method="post" action="/peers/{{ peer.id }}/toggle" class="inline">
-    <button type="submit">{{ "Disable" if peer.enabled else "Enable" }}</button>
-  </form>
-  <form method="post" action="/peers/{{ peer.id }}/rotate" class="inline"
-        onsubmit="return confirm('Rotate keys? The old client config stops working immediately.')">
-    <button type="submit">Rotate keys</button>
-  </form>
-  <form method="post" action="/peers/{{ peer.id }}/reset-usage" class="inline"
-        onsubmit="return confirm('Reset usage counters to zero?')">
-    <button type="submit">Reset usage</button>
-  </form>
-  <form method="post" action="/peers/{{ peer.id }}/delete" class="inline"
-        onsubmit="return confirm('Delete peer {{ peer.name }}?')">
-    <button type="submit" class="danger">Delete</button>
-  </form>
-</div>
 {% endblock %}

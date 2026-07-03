@@ -40,21 +40,23 @@ async function refresh() {
 
   const tbody = document.querySelector("#peer-table tbody");
   if (!tbody) return;
+  const badgeBase = "rounded-full px-2 py-0.5 text-xs font-medium";
   tbody.innerHTML = "";
   for (const p of data.peers) {
     const tr = document.createElement("tr");
+    tr.className = "hover:bg-slate-50";
     const badge = p.online
-      ? '<span class="badge ok">online</span>'
+      ? `<span class="${badgeBase} bg-emerald-100 text-emerald-700">online</span>`
       : p.enabled
-        ? '<span class="badge muted">offline</span>'
-        : '<span class="badge err">disabled</span>';
+        ? `<span class="${badgeBase} bg-slate-100 text-slate-500">offline</span>`
+        : `<span class="${badgeBase} bg-red-100 text-red-700">disabled</span>`;
     tr.innerHTML =
-      `<td><a href="/peers/${p.id}"></a></td>` +
-      `<td>${p.address}</td>` +
-      `<td>${badge}</td>` +
-      `<td>${fmtHandshake(p.latest_handshake)}</td>` +
-      `<td>${fmtBytes(p.rx_bytes)}</td>` +
-      `<td>${fmtBytes(p.tx_bytes)}</td>`;
+      `<td class="px-4 py-3"><a href="/peers/${p.id}" class="font-medium text-blue-600 hover:underline"></a></td>` +
+      `<td class="px-4 py-3 font-mono text-xs">${p.address}</td>` +
+      `<td class="px-4 py-3">${badge}</td>` +
+      `<td class="px-4 py-3 text-slate-500">${fmtHandshake(p.latest_handshake)}</td>` +
+      `<td class="px-4 py-3 text-slate-500">${fmtBytes(p.rx_bytes)}</td>` +
+      `<td class="px-4 py-3 text-slate-500">${fmtBytes(p.tx_bytes)}</td>`;
     tr.querySelector("a").textContent = p.name;
     tbody.appendChild(tr);
   }

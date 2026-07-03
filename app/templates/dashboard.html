@@ -2,34 +2,48 @@
 {% block title %}Dashboard - WireGuard Admin{% endblock %}
 {% block breadcrumbs %}<span>/</span> <span>Dashboard</span>{% endblock %}
 {% block content %}
-<h1>Dashboard</h1>
-<div class="cards">
-  <div class="card">
-    <h3>Interface</h3>
-    <p>{{ status.name }}
-      {% if status.up %}<span class="badge ok">up</span>
-      {% else %}<span class="badge err">down</span>{% endif %}
+<h1 class="mb-6 text-2xl font-bold">Dashboard</h1>
+
+<div class="mb-8 grid gap-4 sm:grid-cols-3">
+  <div class="rounded-xl bg-white p-5 shadow-sm">
+    <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Interface</h3>
+    <p class="flex items-center gap-2 text-lg font-semibold">
+      {{ status.name }}
+      {% if status.up %}
+      <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">up</span>
+      {% else %}
+      <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">down</span>
+      {% endif %}
     </p>
-    <p class="muted">Port {{ status.listen_port or settings.wg_port }}</p>
+    <p class="mt-1 text-sm text-slate-500">Port {{ status.listen_port or settings.wg_port }}</p>
   </div>
-  <div class="card">
-    <h3>Peers</h3>
-    <p><span id="peer-count">{{ peers | length }}</span> total,
-       <span id="online-count">-</span> online</p>
+  <div class="rounded-xl bg-white p-5 shadow-sm">
+    <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Peers</h3>
+    <p class="text-lg font-semibold"><span id="peer-count">{{ peers | length }}</span> total</p>
+    <p class="mt-1 text-sm text-slate-500"><span id="online-count">-</span> online</p>
   </div>
-  <div class="card">
-    <h3>Traffic</h3>
-    <p>RX <span id="total-rx">{{ status.total_rx | fmt_bytes }}</span></p>
-    <p>TX <span id="total-tx">{{ status.total_tx | fmt_bytes }}</span></p>
+  <div class="rounded-xl bg-white p-5 shadow-sm">
+    <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Traffic</h3>
+    <p class="text-sm">RX <span id="total-rx" class="font-semibold">{{ status.total_rx | fmt_bytes }}</span></p>
+    <p class="mt-1 text-sm">TX <span id="total-tx" class="font-semibold">{{ status.total_tx | fmt_bytes }}</span></p>
   </div>
 </div>
 
-<h2>Peers</h2>
-<table id="peer-table">
-  <thead>
-    <tr><th>Name</th><th>Address</th><th>Status</th><th>Handshake</th><th>RX</th><th>TX</th></tr>
-  </thead>
-  <tbody></tbody>
-</table>
+<h2 class="mb-3 text-lg font-semibold">Peers</h2>
+<div class="overflow-hidden rounded-xl bg-white shadow-sm">
+  <table id="peer-table" class="w-full text-sm">
+    <thead>
+      <tr class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-400">
+        <th class="px-4 py-3 font-semibold">Name</th>
+        <th class="px-4 py-3 font-semibold">Address</th>
+        <th class="px-4 py-3 font-semibold">Status</th>
+        <th class="px-4 py-3 font-semibold">Handshake</th>
+        <th class="px-4 py-3 font-semibold">RX</th>
+        <th class="px-4 py-3 font-semibold">TX</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100"></tbody>
+  </table>
+</div>
 {% endblock %}
 {% block scripts %}<script src="/static/status.js"></script>{% endblock %}
