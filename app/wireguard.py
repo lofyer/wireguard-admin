@@ -176,14 +176,26 @@ def write_server_config(private_key: str, peers: list[Peer]) -> None:
     config_path.write_text(render_server_config(private_key, peers))
 
 
+def _is_managed(status: InterfaceStatus) -> bool:
+    _, server_public = ensure_server_keys()
+    return status.public_key == server_public
+
+
 def interface_up() -> None:
-    if not get_status().up:
+    status = get_status()
+    if status.up and not _is_managed(status):
+        raise RuntimeError(
+            f"Interface {settings.wg_interface} is up but uses a foreign key; "
+            "refusing to manage it. Set WG_INTERFACE to a dedicated interface."
+        )
+    if not status.up:
         _run(["wg-quick", "up", settings.wg_interface])
 
 
 def sync_peers(private_key: str, peers: list[Peer]) -> None:
     write_server_config(private_key, peers)
-    if get_status().up:
+    status = get_status()
+    if status.up and _is_managed(status):
         stripped = _run(
             ["wg-quick", "strip", str(settings.wg_config_dir / f"{settings.wg_interface}.conf")]
         )
