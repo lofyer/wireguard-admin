@@ -2,6 +2,7 @@ import asyncio
 import io
 from contextlib import asynccontextmanager
 from datetime import datetime
+from urllib.parse import quote
 
 import qrcode
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
@@ -108,11 +109,13 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/peers", response_class=HTMLResponse, dependencies=[logged_in])
-def peers_page(request: Request, db: Session = Depends(get_db)):
+def peers_page(request: Request, db: Session = Depends(get_db), error: str = ""):
     status = wireguard.get_status()
     peers = service.list_peers(db)
     return templates.TemplateResponse(
-        request, "peers.html", {"peers": peers, "status": status}
+        request,
+        "peers.html",
+        {"peers": peers, "status": status, "error": error, "settings": settings},
     )
 
 
@@ -129,13 +132,22 @@ def create_peer(
     note: str = Form(""),
     quota_gib: str = Form(""),
     count: int = Form(1),
+    address: str = Form(""),
+    dns: str = Form(""),
 ):
     expiry = datetime.fromisoformat(expires_at) if expires_at else None
     quota = _parse_quota_gib(quota_gib)
-    if count > 1:
-        service.create_peers_batch(db, name.strip(), min(count, 50), expiry, note.strip(), quota)
-        return RedirectResponse("/peers", status_code=303)
-    peer = service.create_peer(db, name.strip(), expiry, note.strip(), quota)
+    try:
+        if count > 1:
+            service.create_peers_batch(
+                db, name.strip(), min(count, 50), expiry, note.strip(), quota
+            )
+            return RedirectResponse("/peers", status_code=303)
+        peer = service.create_peer(
+            db, name.strip(), expiry, note.strip(), quota, address.strip(), dns.strip()
+        )
+    except ValueError as exc:
+        return RedirectResponse(f"/peers?error={quote(str(exc))}", status_code=303)
     return RedirectResponse(f"/peers/{peer.id}", status_code=303)
 
 
@@ -150,10 +162,16 @@ def _get_peer_or_404(db: Session, peer_id: int):
 def peer_detail(request: Request, peer_id: int, db: Session = Depends(get_db)):
     peer = _get_peer_or_404(db, peer_id)
     status = wireguard.get_status()
+    _, server_public = wireguard.ensure_server_keys()
+    client_config = wireguard.render_client_config(peer, server_public)
     return templates.TemplateResponse(
         request,
         "peer_detail.html",
-        {"peer": peer, "peer_status": status.peers.get(peer.public_key)},
+        {
+            "peer": peer,
+            "peer_status": status.peers.get(peer.public_key),
+            "client_config": client_config,
+        },
     )
 
 
@@ -163,9 +181,10 @@ def update_peer(
     db: Session = Depends(get_db),
     note: str = Form(""),
     quota_gib: str = Form(""),
+    dns: str = Form(""),
 ):
     peer = _get_peer_or_404(db, peer_id)
-    service.update_peer(db, peer, note.strip(), _parse_quota_gib(quota_gib))
+    service.update_peer(db, peer, note.strip(), _parse_quota_gib(quota_gib), dns.strip())
     return RedirectResponse(f"/peers/{peer_id}", status_code=303)
 
 

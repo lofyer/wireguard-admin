@@ -71,6 +71,19 @@ input {
 }
 .add-peer { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; }
 input.narrow { width: 80px; }
+input.mid { width: 160px; }
+.breadcrumbs { margin-bottom: 1rem; font-size: 0.85rem; color: #6b7280; }
+.breadcrumbs a { color: #2563eb; text-decoration: none; }
+.breadcrumbs a:hover { text-decoration: underline; }
+.config-card { margin-top: 1rem; }
+.config-card pre {
+  background: #1f2430;
+  color: #d6e2ff;
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
 form.stack label { display: block; margin-bottom: 0.5rem; }
 form.stack { margin-top: 0.75rem; }
 

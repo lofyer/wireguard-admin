@@ -17,6 +17,10 @@
   </form>
 </nav>
 <main>
+<div class="breadcrumbs">
+  <a href="/">Home</a>
+  {% block breadcrumbs %}{% endblock %}
+</div>
 {% block content %}{% endblock %}
 </main>
 {% block scripts %}{% endblock %}

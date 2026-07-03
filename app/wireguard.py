@@ -119,6 +119,23 @@ def server_address() -> str:
     return f"{next(network.hosts())}/{network.prefixlen}"
 
 
+def validate_address(address: str, taken: list[str]) -> str:
+    network = ipaddress.ip_network(settings.wg_subnet)
+    try:
+        ip = ipaddress.ip_address(address.split("/")[0].strip())
+    except ValueError:
+        raise ValueError(f"Invalid IP address: {address}")
+    if ip not in network:
+        raise ValueError(f"{ip} is not in subnet {settings.wg_subnet}")
+    if ip in (network.network_address, network.broadcast_address):
+        raise ValueError(f"{ip} is not a usable host address")
+    if ip == next(network.hosts()):
+        raise ValueError(f"{ip} is reserved for the server")
+    if ip in {ipaddress.ip_interface(a).ip for a in taken}:
+        raise ValueError(f"{ip} is already assigned to another peer")
+    return f"{ip}/32"
+
+
 def next_free_address(taken: list[str]) -> str:
     network = ipaddress.ip_network(settings.wg_subnet)
     used = {ipaddress.ip_interface(a).ip for a in taken}
@@ -157,7 +174,7 @@ def render_client_config(peer: Peer, server_public_key: str) -> str:
             "[Interface]",
             f"PrivateKey = {decrypt(peer.private_key_enc)}",
             f"Address = {peer.address}",
-            f"DNS = {settings.wg_dns}",
+            f"DNS = {peer.dns or settings.wg_dns}",
             "",
             "[Peer]",
             f"PublicKey = {server_public_key}",

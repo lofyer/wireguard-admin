@@ -23,6 +23,7 @@ class Peer(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     note: Mapped[str] = mapped_column(String(256), default="")
+    dns: Mapped[str] = mapped_column(String(128), default="")
     quota_bytes: Mapped[int] = mapped_column(Integer, default=0)
     cum_rx: Mapped[int] = mapped_column(Integer, default=0)
     cum_tx: Mapped[int] = mapped_column(Integer, default=0)

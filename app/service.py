@@ -22,10 +22,16 @@ def create_peer(
     expires_at: datetime | None = None,
     note: str = "",
     quota_bytes: int = 0,
+    address: str = "",
+    dns: str = "",
 ) -> Peer:
     private, public = wireguard.generate_keypair()
     psk = wireguard.genpsk()
-    address = wireguard.next_free_address([p.address for p in list_peers(db)])
+    taken = [p.address for p in list_peers(db)]
+    if address:
+        address = wireguard.validate_address(address, taken)
+    else:
+        address = wireguard.next_free_address(taken)
     peer = Peer(
         name=name,
         public_key=public,
@@ -35,6 +41,7 @@ def create_peer(
         expires_at=expires_at,
         note=note,
         quota_bytes=quota_bytes,
+        dns=dns,
     )
     db.add(peer)
     db.commit()
@@ -62,9 +69,10 @@ def create_peers_batch(
     return peers
 
 
-def update_peer(db: Session, peer: Peer, note: str, quota_bytes: int) -> Peer:
+def update_peer(db: Session, peer: Peer, note: str, quota_bytes: int, dns: str = "") -> Peer:
     peer.note = note
     peer.quota_bytes = quota_bytes
+    peer.dns = dns
     db.commit()
     if not peer.over_quota:
         apply_config(db)

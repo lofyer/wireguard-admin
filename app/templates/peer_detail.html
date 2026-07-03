@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ peer.name }} - WireGuard Admin{% endblock %}
+{% block breadcrumbs %}<span>/</span> <a href="/peers">Peers</a> <span>/</span> <span>{{ peer.name }}</span>{% endblock %}
 {% block content %}
 <h1>{{ peer.name }}</h1>
 <div class="cards">
@@ -20,6 +21,7 @@
     </p>
     <form method="post" action="/peers/{{ peer.id }}/update" class="stack">
       <label class="muted">Note <input name="note" value="{{ peer.note }}"></label>
+      <label class="muted">DNS <input name="dns" value="{{ peer.dns }}" placeholder="server default"></label>
       <label class="muted">Quota GiB
         <input name="quota_gib" type="number" step="0.1" min="0" class="narrow"
                value="{{ '%.1f' % (peer.quota_bytes / 1073741824) if peer.quota_bytes else '' }}" placeholder="0 = unlimited">
@@ -41,9 +43,20 @@
   <div class="card">
     <h3>Client config</h3>
     <img src="/peers/{{ peer.id }}/qr" alt="QR code" class="qr">
-    <p><a href="/peers/{{ peer.id }}/config" class="button">Download .conf</a></p>
+    <p><a href="/peers/{{ peer.id }}/config" class="button">Download .conf</a>
+       <button type="button" onclick="copyConfig()">Copy</button></p>
   </div>
 </div>
+
+<div class="card config-card">
+  <h3>{{ peer.name }}.conf</h3>
+  <pre id="client-config">{{ client_config }}</pre>
+</div>
+<script>
+function copyConfig() {
+  navigator.clipboard.writeText(document.getElementById("client-config").textContent);
+}
+</script>
 
 <div class="actions-row">
   <form method="post" action="/peers/{{ peer.id }}/toggle" class="inline">

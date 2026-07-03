@@ -1,17 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Peers - WireGuard Admin{% endblock %}
+{% block breadcrumbs %}<span>/</span> <span>Peers</span>{% endblock %}
 {% block content %}
 <h1>Peers</h1>
 
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
 <form method="post" action="/peers" class="add-peer">
   <input name="name" placeholder="Peer name" required>
   <input name="note" placeholder="Note (optional)">
+  <input name="address" placeholder="IP (auto if empty)" class="mid">
+  <input name="dns" placeholder="DNS (default {{ settings.wg_dns }})" class="mid">
   <label class="muted">Quota GiB <input name="quota_gib" type="number" step="0.1" min="0" class="narrow" placeholder="0"></label>
   <label class="muted">Count <input name="count" type="number" min="1" max="50" value="1" class="narrow"></label>
   <label class="muted">Expires <input name="expires_at" type="datetime-local"></label>
   <button type="submit">Add peer(s)</button>
 </form>
-<p class="muted">Count &gt; 1 creates a batch named name-1, name-2, ... Quota 0 = unlimited.</p>
+<p class="muted">Count &gt; 1 creates a batch named name-1, name-2, ... (custom IP ignored). Quota 0 = unlimited.</p>
 
 <table>
   <thead>
