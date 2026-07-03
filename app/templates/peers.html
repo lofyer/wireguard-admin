@@ -5,13 +5,17 @@
 
 <form method="post" action="/peers" class="add-peer">
   <input name="name" placeholder="Peer name" required>
+  <input name="note" placeholder="Note (optional)">
+  <label class="muted">Quota GiB <input name="quota_gib" type="number" step="0.1" min="0" class="narrow" placeholder="0"></label>
+  <label class="muted">Count <input name="count" type="number" min="1" max="50" value="1" class="narrow"></label>
   <label class="muted">Expires <input name="expires_at" type="datetime-local"></label>
-  <button type="submit">Add peer</button>
+  <button type="submit">Add peer(s)</button>
 </form>
+<p class="muted">Count &gt; 1 creates a batch named name-1, name-2, ... Quota 0 = unlimited.</p>
 
 <table>
   <thead>
-    <tr><th>Name</th><th>Address</th><th>Enabled</th><th>Status</th><th>Created</th><th></th></tr>
+    <tr><th>Name</th><th>Address</th><th>Enabled</th><th>Status</th><th>Usage</th><th>Note</th><th></th></tr>
   </thead>
   <tbody>
   {% for peer in peers %}
@@ -19,9 +23,10 @@
     <tr>
       <td><a href="/peers/{{ peer.id }}">{{ peer.name }}</a></td>
       <td>{{ peer.address }}</td>
-      <td>{% if peer.enabled %}<span class="badge ok">enabled</span>{% else %}<span class="badge err">disabled</span>{% endif %}</td>
+      <td>{% if peer.enabled %}<span class="badge ok">enabled</span>{% elif peer.over_quota %}<span class="badge err">over quota</span>{% else %}<span class="badge err">disabled</span>{% endif %}</td>
       <td>{% if ps and ps.online %}<span class="badge ok">online</span>{% else %}<span class="badge muted">offline</span>{% endif %}</td>
-      <td class="muted">{{ peer.created_at.strftime("%Y-%m-%d") }}</td>
+      <td class="muted">{{ peer.cum_total | fmt_bytes }}{% if peer.quota_bytes %} / {{ peer.quota_bytes | fmt_bytes }}{% endif %}</td>
+      <td class="muted">{{ peer.note }}</td>
       <td class="actions">
         <form method="post" action="/peers/{{ peer.id }}/toggle" class="inline">
           <button type="submit">{{ "Disable" if peer.enabled else "Enable" }}</button>
@@ -33,7 +38,7 @@
       </td>
     </tr>
   {% else %}
-    <tr><td colspan="6" class="muted">No peers yet. Add one above.</td></tr>
+    <tr><td colspan="7" class="muted">No peers yet. Add one above.</td></tr>
   {% endfor %}
   </tbody>
 </table>

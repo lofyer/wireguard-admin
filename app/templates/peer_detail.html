@@ -13,6 +13,19 @@
     </p>
     <p class="muted">Created {{ peer.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
     {% if peer.expires_at %}<p class="muted">Expires {{ peer.expires_at.strftime("%Y-%m-%d %H:%M") }}</p>{% endif %}
+    <p>Usage: {{ peer.cum_total | fmt_bytes }}
+      {% if peer.quota_bytes %} / {{ peer.quota_bytes | fmt_bytes }}
+        {% if peer.over_quota %}<span class="badge err">over quota</span>{% endif %}
+      {% endif %}
+    </p>
+    <form method="post" action="/peers/{{ peer.id }}/update" class="stack">
+      <label class="muted">Note <input name="note" value="{{ peer.note }}"></label>
+      <label class="muted">Quota GiB
+        <input name="quota_gib" type="number" step="0.1" min="0" class="narrow"
+               value="{{ '%.1f' % (peer.quota_bytes / 1073741824) if peer.quota_bytes else '' }}" placeholder="0 = unlimited">
+      </label>
+      <button type="submit">Save</button>
+    </form>
   </div>
   <div class="card">
     <h3>Live status</h3>
@@ -39,6 +52,10 @@
   <form method="post" action="/peers/{{ peer.id }}/rotate" class="inline"
         onsubmit="return confirm('Rotate keys? The old client config stops working immediately.')">
     <button type="submit">Rotate keys</button>
+  </form>
+  <form method="post" action="/peers/{{ peer.id }}/reset-usage" class="inline"
+        onsubmit="return confirm('Reset usage counters to zero?')">
+    <button type="submit">Reset usage</button>
   </form>
   <form method="post" action="/peers/{{ peer.id }}/delete" class="inline"
         onsubmit="return confirm('Delete peer {{ peer.name }}?')">

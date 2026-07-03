@@ -69,7 +69,10 @@ input {
   border-radius: 6px;
   font-size: 0.9rem;
 }
-.add-peer { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+.add-peer { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; }
+input.narrow { width: 80px; }
+form.stack label { display: block; margin-bottom: 0.5rem; }
+form.stack { margin-top: 0.75rem; }
 
 .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
 .login-box {

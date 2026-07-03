@@ -13,9 +13,9 @@ from sqlalchemy.orm import Session
 from . import service, wireguard
 from .auth import SESSION_COOKIE, create_session_token, logged_in, verify_credentials
 from .config import settings
-from .db import Base, SessionLocal, engine, get_db
+from .db import Base, SessionLocal, engine, get_db, run_migrations
 
-TRAFFIC_SAMPLE_INTERVAL = 300
+TRAFFIC_SAMPLE_INTERVAL = 60
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -25,6 +25,7 @@ async def _background_sampler() -> None:
         await asyncio.sleep(TRAFFIC_SAMPLE_INTERVAL)
         db = SessionLocal()
         try:
+            service.accumulate_usage(db)
             service.disable_expired_peers(db)
             service.sample_traffic(db)
         except Exception:
@@ -36,6 +37,7 @@ async def _background_sampler() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
+    run_migrations()
     db = SessionLocal()
     try:
         service.apply_config(db)
@@ -114,14 +116,26 @@ def peers_page(request: Request, db: Session = Depends(get_db)):
     )
 
 
+def _parse_quota_gib(value: str) -> int:
+    quota = float(value) if value.strip() else 0
+    return int(quota * 1024**3)
+
+
 @app.post("/peers", dependencies=[logged_in])
 def create_peer(
     db: Session = Depends(get_db),
     name: str = Form(...),
     expires_at: str = Form(""),
+    note: str = Form(""),
+    quota_gib: str = Form(""),
+    count: int = Form(1),
 ):
     expiry = datetime.fromisoformat(expires_at) if expires_at else None
-    peer = service.create_peer(db, name.strip(), expiry)
+    quota = _parse_quota_gib(quota_gib)
+    if count > 1:
+        service.create_peers_batch(db, name.strip(), min(count, 50), expiry, note.strip(), quota)
+        return RedirectResponse("/peers", status_code=303)
+    peer = service.create_peer(db, name.strip(), expiry, note.strip(), quota)
     return RedirectResponse(f"/peers/{peer.id}", status_code=303)
 
 
@@ -141,6 +155,24 @@ def peer_detail(request: Request, peer_id: int, db: Session = Depends(get_db)):
         "peer_detail.html",
         {"peer": peer, "peer_status": status.peers.get(peer.public_key)},
     )
+
+
+@app.post("/peers/{peer_id}/update", dependencies=[logged_in])
+def update_peer(
+    peer_id: int,
+    db: Session = Depends(get_db),
+    note: str = Form(""),
+    quota_gib: str = Form(""),
+):
+    peer = _get_peer_or_404(db, peer_id)
+    service.update_peer(db, peer, note.strip(), _parse_quota_gib(quota_gib))
+    return RedirectResponse(f"/peers/{peer_id}", status_code=303)
+
+
+@app.post("/peers/{peer_id}/reset-usage", dependencies=[logged_in])
+def reset_usage(peer_id: int, db: Session = Depends(get_db)):
+    service.reset_peer_usage(db, _get_peer_or_404(db, peer_id))
+    return RedirectResponse(f"/peers/{peer_id}", status_code=303)
 
 
 @app.post("/peers/{peer_id}/toggle", dependencies=[logged_in])
@@ -211,6 +243,11 @@ def api_status(db: Session = Depends(get_db)):
                 "name": peer.name,
                 "address": peer.address,
                 "enabled": peer.enabled,
+                "note": peer.note,
+                "quota_bytes": peer.quota_bytes,
+                "cum_rx": peer.cum_rx,
+                "cum_tx": peer.cum_tx,
+                "over_quota": peer.over_quota,
                 "online": (ps := status.peers.get(peer.public_key)) is not None and ps.online,
                 "endpoint": ps.endpoint if ps else None,
                 "latest_handshake": ps.latest_handshake.isoformat()

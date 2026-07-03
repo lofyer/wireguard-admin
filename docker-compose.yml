@@ -10,15 +10,20 @@ services:
       - net.ipv4.conf.all.src_valid_mark=1
     devices:
       - /dev/net/tun:/dev/net/tun
+    # For relay/组网 into host tunnels (WG_RELAY_SUBNETS), use host networking:
+    # uncomment network_mode and remove the ports section.
+    # network_mode: host
     ports:
       - "${WG_PORT:-51821}:${WG_PORT:-51821}/udp"
-      - "127.0.0.1:8000:8000/tcp"
+      - "8000:8000/tcp"
     environment:
       WG_INTERFACE: ${WG_INTERFACE:-wg1}
       WG_HOST: ${WG_HOST:?set WG_HOST to your public IP or domain}
       WG_PORT: ${WG_PORT:-51821}
       WG_SUBNET: ${WG_SUBNET:-10.8.0.0/24}
       WG_DNS: ${WG_DNS:-8.8.8.8}
+      WG_ALLOWED_IPS: ${WG_ALLOWED_IPS:-0.0.0.0/0, ::/0}
+      WG_RELAY_SUBNETS: ${WG_RELAY_SUBNETS:-}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
