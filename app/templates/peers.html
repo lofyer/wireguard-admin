@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Peers - WireGuard Admin{% endblock %}
+{% block content %}
+<h1>Peers</h1>
+
+<form method="post" action="/peers" class="add-peer">
+  <input name="name" placeholder="Peer name" required>
+  <label class="muted">Expires <input name="expires_at" type="datetime-local"></label>
+  <button type="submit">Add peer</button>
+</form>
+
+<table>
+  <thead>
+    <tr><th>Name</th><th>Address</th><th>Enabled</th><th>Status</th><th>Created</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for peer in peers %}
+    {% set ps = status.peers.get(peer.public_key) %}
+    <tr>
+      <td><a href="/peers/{{ peer.id }}">{{ peer.name }}</a></td>
+      <td>{{ peer.address }}</td>
+      <td>{% if peer.enabled %}<span class="badge ok">enabled</span>{% else %}<span class="badge err">disabled</span>{% endif %}</td>
+      <td>{% if ps and ps.online %}<span class="badge ok">online</span>{% else %}<span class="badge muted">offline</span>{% endif %}</td>
+      <td class="muted">{{ peer.created_at.strftime("%Y-%m-%d") }}</td>
+      <td class="actions">
+        <form method="post" action="/peers/{{ peer.id }}/toggle" class="inline">
+          <button type="submit">{{ "Disable" if peer.enabled else "Enable" }}</button>
+        </form>
+        <form method="post" action="/peers/{{ peer.id }}/delete" class="inline"
+              onsubmit="return confirm('Delete peer {{ peer.name }}?')">
+          <button type="submit" class="danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6" class="muted">No peers yet. Add one above.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

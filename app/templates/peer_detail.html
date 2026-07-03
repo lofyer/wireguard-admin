@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ peer.name }} - WireGuard Admin{% endblock %}
+{% block content %}
+<h1>{{ peer.name }}</h1>
+<div class="cards">
+  <div class="card">
+    <h3>Details</h3>
+    <p>Address: {{ peer.address }}</p>
+    <p>Public key: <code>{{ peer.public_key }}</code></p>
+    <p>Enabled:
+      {% if peer.enabled %}<span class="badge ok">yes</span>
+      {% else %}<span class="badge err">no</span>{% endif %}
+    </p>
+    <p class="muted">Created {{ peer.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
+    {% if peer.expires_at %}<p class="muted">Expires {{ peer.expires_at.strftime("%Y-%m-%d %H:%M") }}</p>{% endif %}
+  </div>
+  <div class="card">
+    <h3>Live status</h3>
+    {% if peer_status %}
+      <p>Status: {% if peer_status.online %}<span class="badge ok">online</span>{% else %}<span class="badge muted">offline</span>{% endif %}</p>
+      <p>Endpoint: {{ peer_status.endpoint or "-" }}</p>
+      <p>Handshake: {{ peer_status.latest_handshake.strftime("%Y-%m-%d %H:%M:%S") if peer_status.latest_handshake else "never" }}</p>
+      <p>RX {{ peer_status.rx_bytes | fmt_bytes }} / TX {{ peer_status.tx_bytes | fmt_bytes }}</p>
+    {% else %}
+      <p class="muted">Not present on interface (disabled or interface down).</p>
+    {% endif %}
+  </div>
+  <div class="card">
+    <h3>Client config</h3>
+    <img src="/peers/{{ peer.id }}/qr" alt="QR code" class="qr">
+    <p><a href="/peers/{{ peer.id }}/config" class="button">Download .conf</a></p>
+  </div>
+</div>
+
+<div class="actions-row">
+  <form method="post" action="/peers/{{ peer.id }}/toggle" class="inline">
+    <button type="submit">{{ "Disable" if peer.enabled else "Enable" }}</button>
+  </form>
+  <form method="post" action="/peers/{{ peer.id }}/rotate" class="inline"
+        onsubmit="return confirm('Rotate keys? The old client config stops working immediately.')">
+    <button type="submit">Rotate keys</button>
+  </form>
+  <form method="post" action="/peers/{{ peer.id }}/delete" class="inline"
+        onsubmit="return confirm('Delete peer {{ peer.name }}?')">
+    <button type="submit" class="danger">Delete</button>
+  </form>
+</div>
+{% endblock %}

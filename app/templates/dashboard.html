@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - WireGuard Admin{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="cards">
+  <div class="card">
+    <h3>Interface</h3>
+    <p>{{ status.name }}
+      {% if status.up %}<span class="badge ok">up</span>
+      {% else %}<span class="badge err">down</span>{% endif %}
+    </p>
+    <p class="muted">Port {{ status.listen_port or settings.wg_port }}</p>
+  </div>
+  <div class="card">
+    <h3>Peers</h3>
+    <p><span id="peer-count">{{ peers | length }}</span> total,
+       <span id="online-count">-</span> online</p>
+  </div>
+  <div class="card">
+    <h3>Traffic</h3>
+    <p>RX <span id="total-rx">{{ status.total_rx | fmt_bytes }}</span></p>
+    <p>TX <span id="total-tx">{{ status.total_tx | fmt_bytes }}</span></p>
+  </div>
+</div>
+
+<h2>Peers</h2>
+<table id="peer-table">
+  <thead>
+    <tr><th>Name</th><th>Address</th><th>Status</th><th>Handshake</th><th>RX</th><th>TX</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+{% endblock %}
+{% block scripts %}<script src="/static/status.js"></script>{% endblock %}
