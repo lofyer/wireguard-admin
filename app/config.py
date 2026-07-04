@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     wg_allowed_ips: str = "0.0.0.0/0, ::/0"
     wg_persistent_keepalive: int = 25
     wg_config_dir: Path = Path("/etc/wireguard")
+    wg_peer_isolation: bool = False
 
     admin_username: str = "admin"
     admin_password: str = "changeme"

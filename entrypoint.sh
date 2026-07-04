@@ -7,6 +7,14 @@ OUT_IFACE="$(ip route show default | awk '/default/ {print $5; exit}')"
 
 iptables -t nat -C POSTROUTING -s "$WG_SUBNET" -o "$OUT_IFACE" -j MASQUERADE 2>/dev/null \
   || iptables -t nat -A POSTROUTING -s "$WG_SUBNET" -o "$OUT_IFACE" -j MASQUERADE
+# Peer isolation: block peer-to-peer traffic inside the wg subnet.
+if [ "${WG_PEER_ISOLATION:-false}" = "true" ]; then
+  iptables -C FORWARD -i "$WG_INTERFACE" -o "$WG_INTERFACE" -j DROP 2>/dev/null \
+    || iptables -I FORWARD 1 -i "$WG_INTERFACE" -o "$WG_INTERFACE" -j DROP
+else
+  iptables -D FORWARD -i "$WG_INTERFACE" -o "$WG_INTERFACE" -j DROP 2>/dev/null || true
+fi
+
 iptables -C FORWARD -i "$WG_INTERFACE" -j ACCEPT 2>/dev/null \
   || iptables -A FORWARD -i "$WG_INTERFACE" -j ACCEPT
 iptables -C FORWARD -o "$WG_INTERFACE" -j ACCEPT 2>/dev/null \

@@ -24,6 +24,8 @@ def create_peer(
     quota_bytes: int = 0,
     address: str = "",
     dns: str = "",
+    extra_allowed_ips: str = "",
+    client_allowed_ips: str = "",
 ) -> Peer:
     private, public = wireguard.generate_keypair()
     psk = wireguard.genpsk()
@@ -42,6 +44,8 @@ def create_peer(
         note=note,
         quota_bytes=quota_bytes,
         dns=dns,
+        extra_allowed_ips=wireguard.validate_cidr_list(extra_allowed_ips),
+        client_allowed_ips=wireguard.validate_cidr_list(client_allowed_ips),
     )
     db.add(peer)
     db.commit()
@@ -69,10 +73,20 @@ def create_peers_batch(
     return peers
 
 
-def update_peer(db: Session, peer: Peer, note: str, quota_bytes: int, dns: str = "") -> Peer:
+def update_peer(
+    db: Session,
+    peer: Peer,
+    note: str,
+    quota_bytes: int,
+    dns: str = "",
+    extra_allowed_ips: str = "",
+    client_allowed_ips: str = "",
+) -> Peer:
     peer.note = note
     peer.quota_bytes = quota_bytes
     peer.dns = dns
+    peer.extra_allowed_ips = wireguard.validate_cidr_list(extra_allowed_ips)
+    peer.client_allowed_ips = wireguard.validate_cidr_list(client_allowed_ips)
     db.commit()
     if not peer.over_quota:
         apply_config(db)

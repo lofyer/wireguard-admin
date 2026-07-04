@@ -139,6 +139,8 @@ def create_peer(
     count: int = Form(1),
     address: str = Form(""),
     dns: str = Form(""),
+    extra_allowed_ips: str = Form(""),
+    client_allowed_ips: str = Form(""),
 ):
     expiry = datetime.fromisoformat(expires_at) if expires_at else None
     quota = _parse_quota_gib(quota_gib)
@@ -149,7 +151,15 @@ def create_peer(
             )
             return RedirectResponse("/peers", status_code=303)
         peer = service.create_peer(
-            db, name.strip(), expiry, note.strip(), quota, address.strip(), dns.strip()
+            db,
+            name.strip(),
+            expiry,
+            note.strip(),
+            quota,
+            address.strip(),
+            dns.strip(),
+            extra_allowed_ips.strip(),
+            client_allowed_ips.strip(),
         )
     except ValueError as exc:
         return RedirectResponse(f"/peers?error={quote(str(exc))}", status_code=303)
@@ -164,7 +174,9 @@ def _get_peer_or_404(db: Session, peer_id: int):
 
 
 @app.get("/peers/{peer_id}", response_class=HTMLResponse, dependencies=[logged_in])
-def peer_detail(request: Request, peer_id: int, db: Session = Depends(get_db)):
+def peer_detail(
+    request: Request, peer_id: int, db: Session = Depends(get_db), error: str = ""
+):
     peer = _get_peer_or_404(db, peer_id)
     status = wireguard.get_status()
     _, server_public = wireguard.ensure_server_keys()
@@ -176,6 +188,8 @@ def peer_detail(request: Request, peer_id: int, db: Session = Depends(get_db)):
             "peer": peer,
             "peer_status": status.peers.get(peer.public_key),
             "client_config": client_config,
+            "error": error,
+            "server_tunnel_ip": wireguard.server_address().split("/")[0],
         },
     )
 
@@ -187,9 +201,24 @@ def update_peer(
     note: str = Form(""),
     quota_gib: str = Form(""),
     dns: str = Form(""),
+    extra_allowed_ips: str = Form(""),
+    client_allowed_ips: str = Form(""),
 ):
     peer = _get_peer_or_404(db, peer_id)
-    service.update_peer(db, peer, note.strip(), _parse_quota_gib(quota_gib), dns.strip())
+    try:
+        service.update_peer(
+            db,
+            peer,
+            note.strip(),
+            _parse_quota_gib(quota_gib),
+            dns.strip(),
+            extra_allowed_ips.strip(),
+            client_allowed_ips.strip(),
+        )
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/peers/{peer_id}?error={quote(str(exc))}", status_code=303
+        )
     return RedirectResponse(f"/peers/{peer_id}", status_code=303)
 
 
@@ -274,6 +303,8 @@ def api_status(db: Session = Depends(get_db)):
                 "address": peer.address,
                 "enabled": peer.enabled,
                 "note": peer.note,
+                "extra_allowed_ips": peer.extra_allowed_ips,
+                "client_allowed_ips": peer.client_allowed_ips,
                 "quota_bytes": peer.quota_bytes,
                 "cum_rx": peer.cum_rx,
                 "cum_tx": peer.cum_tx,

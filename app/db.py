@@ -26,6 +26,8 @@ def get_db():
 PEER_MIGRATIONS = {
     "note": "ALTER TABLE peers ADD COLUMN note VARCHAR(256) NOT NULL DEFAULT ''",
     "dns": "ALTER TABLE peers ADD COLUMN dns VARCHAR(128) NOT NULL DEFAULT ''",
+    "extra_allowed_ips": "ALTER TABLE peers ADD COLUMN extra_allowed_ips VARCHAR(512) NOT NULL DEFAULT ''",
+    "client_allowed_ips": "ALTER TABLE peers ADD COLUMN client_allowed_ips VARCHAR(512) NOT NULL DEFAULT ''",
     "quota_bytes": "ALTER TABLE peers ADD COLUMN quota_bytes INTEGER NOT NULL DEFAULT 0",
     "cum_rx": "ALTER TABLE peers ADD COLUMN cum_rx INTEGER NOT NULL DEFAULT 0",
     "cum_tx": "ALTER TABLE peers ADD COLUMN cum_tx INTEGER NOT NULL DEFAULT 0",

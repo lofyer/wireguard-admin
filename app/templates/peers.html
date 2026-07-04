@@ -39,6 +39,14 @@
       <input name="expires_at" type="datetime-local"
              class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
     </label>
+    <label class="block text-sm font-medium text-slate-600">Site subnets
+      <input name="extra_allowed_ips" placeholder="e.g. 192.168.5.0/24"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Client routes
+      <input name="client_allowed_ips" placeholder="server default"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
     <div class="flex items-end">
       <button type="submit"
               class="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">

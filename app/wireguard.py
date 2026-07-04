@@ -147,6 +147,26 @@ def next_free_address(taken: list[str]) -> str:
     raise RuntimeError(f"No free addresses left in {settings.wg_subnet}")
 
 
+def validate_cidr_list(value: str) -> str:
+    networks = []
+    for part in value.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            networks.append(str(ipaddress.ip_network(part, strict=False)))
+        except ValueError:
+            raise ValueError(f"Invalid CIDR: {part}")
+    return ", ".join(networks)
+
+
+def server_allowed_ips(peer: Peer) -> str:
+    allowed = peer.address
+    if peer.extra_allowed_ips:
+        allowed += f", {peer.extra_allowed_ips}"
+    return allowed
+
+
 def render_server_config(private_key: str, peers: list[Peer]) -> str:
     lines = [
         "[Interface]",
@@ -154,6 +174,13 @@ def render_server_config(private_key: str, peers: list[Peer]) -> str:
         f"Address = {server_address()}",
         f"ListenPort = {settings.wg_port}",
     ]
+    # wg-quick adds routes for /32 peer addresses automatically; extra
+    # site subnets need explicit routes so return traffic enters the tunnel.
+    for peer in peers:
+        if peer.enabled and peer.extra_allowed_ips:
+            for subnet in peer.extra_allowed_ips.split(","):
+                subnet = subnet.strip()
+                lines.append(f"PostUp = ip route replace {subnet} dev %i")
     for peer in peers:
         if not peer.enabled:
             continue
@@ -163,7 +190,7 @@ def render_server_config(private_key: str, peers: list[Peer]) -> str:
             f"# {peer.name}",
             f"PublicKey = {peer.public_key}",
             f"PresharedKey = {decrypt(peer.preshared_key_enc)}",
-            f"AllowedIPs = {peer.address}",
+            f"AllowedIPs = {server_allowed_ips(peer)}",
         ]
     return "\n".join(lines) + "\n"
 
@@ -180,7 +207,7 @@ def render_client_config(peer: Peer, server_public_key: str) -> str:
             f"PublicKey = {server_public_key}",
             f"PresharedKey = {decrypt(peer.preshared_key_enc)}",
             f"Endpoint = {settings.wg_host}:{settings.wg_port}",
-            f"AllowedIPs = {settings.wg_allowed_ips}",
+            f"AllowedIPs = {peer.client_allowed_ips or settings.wg_allowed_ips}",
             f"PersistentKeepalive = {settings.wg_persistent_keepalive}",
         ]
     ) + "\n"
@@ -209,6 +236,21 @@ def interface_up() -> None:
         _run(["wg-quick", "up", settings.wg_interface])
 
 
+def sync_routes(peers: list[Peer]) -> None:
+    for peer in peers:
+        if not peer.extra_allowed_ips:
+            continue
+        for subnet in peer.extra_allowed_ips.split(","):
+            subnet = subnet.strip()
+            args = ["ip", "route", "replace" if peer.enabled else "del", subnet]
+            if peer.enabled:
+                args += ["dev", settings.wg_interface]
+            try:
+                _run(args)
+            except subprocess.CalledProcessError:
+                pass
+
+
 def sync_peers(private_key: str, peers: list[Peer]) -> None:
     write_server_config(private_key, peers)
     status = get_status()
@@ -217,3 +259,4 @@ def sync_peers(private_key: str, peers: list[Peer]) -> None:
             ["wg-quick", "strip", str(settings.wg_config_dir / f"{settings.wg_interface}.conf")]
         )
         _run(["wg", "syncconf", settings.wg_interface, "/dev/stdin"], input_text=stripped)
+        sync_routes(peers)

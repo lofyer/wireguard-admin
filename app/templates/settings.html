@@ -41,6 +41,10 @@
       <dt class="text-slate-500">Keepalive</dt>
       <dd class="font-medium">{{ settings.wg_persistent_keepalive }}s</dd>
     </div>
+    <div class="flex justify-between gap-4 py-3">
+      <dt class="text-slate-500">Peer isolation</dt>
+      <dd class="font-medium">{{ "on" if settings.wg_peer_isolation else "off" }}</dd>
+    </div>
   </dl>
   <p class="mt-4 text-xs text-slate-400">Settings are read from environment variables / .env and require a restart to change.</p>
 </div>
