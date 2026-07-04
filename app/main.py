@@ -104,7 +104,12 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        {"status": status, "peers": peers, "settings": settings},
+        {
+            "status": status,
+            "peers": peers,
+            "settings": settings,
+            "server_address": wireguard.server_address(),
+        },
     )
 
 
@@ -240,7 +245,13 @@ def peer_qr(peer_id: int, db: Session = Depends(get_db)):
 def settings_page(request: Request):
     _, server_public = wireguard.ensure_server_keys()
     return templates.TemplateResponse(
-        request, "settings.html", {"settings": settings, "server_public": server_public}
+        request,
+        "settings.html",
+        {
+            "settings": settings,
+            "server_public": server_public,
+            "server_address": wireguard.server_address(),
+        },
     )
 
 
