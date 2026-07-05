@@ -4,14 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}WireGuard Admin{% endblock %}</title>
-  <script src="/static/tailwind.js"></script>
+  <link rel="stylesheet" href="/static/tailwind.css">
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
 <nav class="bg-slate-900 text-slate-300">
   <div class="mx-auto flex max-w-5xl items-center gap-6 px-6 py-3">
     <span class="text-base font-bold tracking-wide text-white">WireGuard Admin</span>
     <a href="/" class="text-sm hover:text-white">Dashboard</a>
+    <a href="/interfaces" class="text-sm hover:text-white">Interfaces</a>
     <a href="/peers" class="text-sm hover:text-white">Peers</a>
+    <a href="/topology" class="text-sm hover:text-white">Topology</a>
     <a href="/settings" class="text-sm hover:text-white">Settings</a>
     <form method="post" action="/logout" class="ml-auto">
       <button type="submit" class="text-sm text-slate-400 hover:text-white">Logout</button>

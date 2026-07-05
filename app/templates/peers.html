@@ -8,9 +8,26 @@
 <p class="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</p>
 {% endif %}
 
+<div class="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
+  {% for iface in interfaces %}
+  <a href="/peers?interface={{ iface.id }}"
+     class="rounded-t-md px-4 py-2 text-sm font-medium {% if current and iface.id == current.id %}border border-b-0 border-slate-200 bg-white text-blue-600{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+    {{ iface.name }}
+    <span class="ml-1 rounded-full bg-slate-100 px-1.5 text-xs text-slate-500">{{ iface.peers | length }}</span>
+  </a>
+  {% endfor %}
+  <a href="/interfaces" class="ml-auto px-4 py-2 text-sm text-slate-400 hover:text-slate-600">Manage interfaces</a>
+</div>
+
+{% if not current %}
+<p class="rounded-xl bg-white p-6 text-center text-slate-400 shadow-sm">
+  No interfaces configured. <a href="/interfaces" class="text-blue-600 hover:underline">Create one first.</a>
+</p>
+{% else %}
 <div class="mb-8 rounded-xl bg-white p-5 shadow-sm">
-  <h2 class="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Add peer</h2>
+  <h2 class="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Add peer to {{ current.name }}</h2>
   <form method="post" action="/peers" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <input type="hidden" name="interface_id" value="{{ current.id }}">
     <label class="block text-sm font-medium text-slate-600">Name
       <input name="name" required placeholder="laptop"
              class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -24,7 +41,7 @@
              class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
     </label>
     <label class="block text-sm font-medium text-slate-600">DNS
-      <input name="dns" placeholder="{{ settings.wg_dns }}"
+      <input name="dns" placeholder="{{ current.dns }}"
              class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
     </label>
     <label class="block text-sm font-medium text-slate-600">Quota (GiB)
@@ -47,9 +64,9 @@
       <input name="client_allowed_ips" placeholder="server default"
              class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
     </label>
-    <div class="flex items-end">
+    <div class="col-span-full">
       <button type="submit"
-              class="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
         Add peer(s)
       </button>
     </div>
@@ -78,6 +95,9 @@
       <tr class="hover:bg-slate-50">
         <td class="px-4 py-3">
           <a href="/peers/{{ peer.id }}" class="font-medium text-blue-600 hover:underline">{{ peer.name }}</a>
+          {% if not peer.has_private_key %}
+          <span class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">imported</span>
+          {% endif %}
         </td>
         <td class="px-4 py-3 font-mono text-xs">{{ peer.address }}</td>
         <td class="px-4 py-3">
@@ -124,4 +144,5 @@
     </tbody>
   </table>
 </div>
+{% endif %}
 {% endblock %}

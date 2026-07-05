@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Interfaces - WireGuard Admin{% endblock %}
+{% block breadcrumbs %}<span>/</span> <span>Interfaces</span>{% endblock %}
+{% block content %}
+<h1 class="mb-6 text-2xl font-bold">Interfaces</h1>
+
+{% if error %}
+<p class="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</p>
+{% endif %}
+
+<div class="mb-8 space-y-4">
+{% for item in overview %}
+{% set iface = item.iface %}
+<div class="rounded-xl bg-white p-5 shadow-sm">
+  <div class="flex flex-wrap items-center gap-3">
+    <h2 class="text-lg font-semibold">{{ iface.name }}</h2>
+    {% if item.status.up %}
+    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">up</span>
+    {% else %}
+    <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">down</span>
+    {% endif %}
+    {% if not iface.enabled %}
+    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">disabled</span>
+    {% endif %}
+    {% if iface.imported %}
+    <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">imported</span>
+    {% endif %}
+    {% if iface.peer_isolation %}
+    <span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">isolation</span>
+    {% endif %}
+    <div class="ml-auto flex gap-2">
+      <a href="/peers?interface={{ iface.id }}"
+         class="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100">
+        Peers ({{ item.peers | length }})
+      </a>
+      <form method="post" action="/interfaces/{{ iface.id }}/toggle"
+            {% if iface.enabled %}onsubmit="return confirm('Bring {{ iface.name }} down? All its peers disconnect.')"{% endif %}>
+        <button type="submit"
+                class="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100">
+          {{ "Down" if iface.enabled else "Up" }}
+        </button>
+      </form>
+      <form method="post" action="/interfaces/{{ iface.id }}/delete"
+            onsubmit="return confirmDelete(this, '{{ iface.name }}', {{ item.peers | length }})">
+        <input type="hidden" name="cascade" value="">
+        <button type="submit"
+                class="rounded-md border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
+          Delete
+        </button>
+      </form>
+    </div>
+  </div>
+  <dl class="mt-3 grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-4">
+    <div class="flex justify-between gap-2 sm:block">
+      <dt class="text-slate-500">Address</dt>
+      <dd class="font-mono text-xs">{{ server_address(iface.subnet) }}</dd>
+    </div>
+    <div class="flex justify-between gap-2 sm:block">
+      <dt class="text-slate-500">Endpoint</dt>
+      <dd class="font-mono text-xs">{{ iface.host }}:{{ iface.listen_port }}</dd>
+    </div>
+    <div class="flex justify-between gap-2 sm:block">
+      <dt class="text-slate-500">Online</dt>
+      <dd>{{ item.online }} / {{ item.peers | length }}</dd>
+    </div>
+    <div class="flex justify-between gap-2 sm:block">
+      <dt class="text-slate-500">Traffic</dt>
+      <dd>RX {{ item.status.total_rx | fmt_bytes }} / TX {{ item.status.total_tx | fmt_bytes }}</dd>
+    </div>
+  </dl>
+  <details class="mt-3 border-t border-slate-100 pt-3">
+    <summary class="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-400">Edit</summary>
+    <form method="post" action="/interfaces/{{ iface.id }}/update"
+          class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <label class="block text-sm font-medium text-slate-600">Endpoint host
+        <input name="host" value="{{ iface.host }}" required
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      </label>
+      <label class="block text-sm font-medium text-slate-600">Client DNS
+        <input name="dns" value="{{ iface.dns }}"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      </label>
+      <label class="block text-sm font-medium text-slate-600">Client AllowedIPs
+        <input name="allowed_ips" value="{{ iface.allowed_ips }}"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      </label>
+      <label class="block text-sm font-medium text-slate-600">Keepalive (s)
+        <input name="persistent_keepalive" type="number" min="0" max="3600" value="{{ iface.persistent_keepalive }}"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      </label>
+      <label class="flex items-end gap-2 pb-2 text-sm font-medium text-slate-600">
+        <input name="peer_isolation" type="checkbox" value="true" {% if iface.peer_isolation %}checked{% endif %}
+               class="h-4 w-4 rounded border-slate-300">
+        Peer isolation
+      </label>
+      <label class="block text-sm font-medium text-slate-600">MTU
+        <input name="mtu" type="number" min="0" max="1500" value="{{ iface.mtu or '' }}" placeholder="1420 (default)"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+        <span class="mt-1 block text-xs text-slate-400">Lower for PPPoE (1412) or nested tunnels (1340). 0 = wg default.</span>
+      </label>
+      <label class="flex items-end gap-2 pb-2 text-sm font-medium text-slate-600">
+        <input name="mss_clamp" type="checkbox" value="true" {% if iface.mss_clamp %}checked{% endif %}
+               class="h-4 w-4 rounded border-slate-300">
+        <span>MSS clamping
+          <span class="block text-xs font-normal text-slate-400">Fixes "ping works but pages hang"</span>
+        </span>
+      </label>
+      <label class="block text-sm font-medium text-slate-600">FwMark
+        <input name="fwmark" value="{{ iface.fwmark }}" placeholder="e.g. 0x8888"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+        <span class="mt-1 block text-xs text-slate-400">Marks tunnel packets for policy routing.</span>
+      </label>
+      <label class="block text-sm font-medium text-slate-600">Route table
+        <input name="route_table" value="{{ iface.route_table }}" placeholder="auto / off / table id"
+               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+        <span class="mt-1 block text-xs text-slate-400">"off" disables wg-quick routes for manual control.</span>
+      </label>
+      <label class="block text-sm font-medium text-slate-600 sm:col-span-2 lg:col-span-1">PostUp commands
+        <textarea name="post_up" rows="2" placeholder="one command per line"
+                  class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">{{ iface.post_up }}</textarea>
+      </label>
+      <label class="block text-sm font-medium text-slate-600 sm:col-span-2 lg:col-span-1">PostDown commands
+        <textarea name="post_down" rows="2" placeholder="one command per line"
+                  class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">{{ iface.post_down }}</textarea>
+        <span class="mt-1 block text-xs text-slate-400">Run as root by wg-quick on interface up/down.</span>
+      </label>
+      <div class="col-span-full">
+        <button type="submit"
+                class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+          Save
+        </button>
+      </div>
+    </form>
+    <p class="mt-2 text-xs text-slate-400">
+      Subnet ({{ iface.subnet }}) and port are fixed after creation. Public key:
+      <span class="break-all font-mono">{{ iface.public_key }}</span>
+    </p>
+  </details>
+</div>
+{% else %}
+<p class="rounded-xl bg-white p-6 text-center text-slate-400 shadow-sm">No interfaces yet. Create one below.</p>
+{% endfor %}
+</div>
+
+<div class="mb-8 rounded-xl bg-white p-5 shadow-sm">
+  <h2 class="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Add interface</h2>
+  <form method="post" action="/interfaces" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <label class="block text-sm font-medium text-slate-600">Name
+      <input name="name" required placeholder="wg2" pattern="[a-zA-Z0-9_=+.-]{1,15}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Subnet
+      <input name="subnet" required placeholder="10.9.0.0/24"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Listen port
+      <input name="listen_port" type="number" min="1" max="65535" required placeholder="51822"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Endpoint host
+      <input name="host" required placeholder="vpn.example.com"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Client DNS
+      <input name="dns" placeholder="{{ settings.wg_dns }}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Client AllowedIPs
+      <input name="allowed_ips" placeholder="{{ settings.wg_allowed_ips }}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Keepalive (s)
+      <input name="persistent_keepalive" type="number" min="0" max="3600" value="25"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="flex items-end gap-2 pb-2 text-sm font-medium text-slate-600">
+      <input name="peer_isolation" type="checkbox" value="true" class="h-4 w-4 rounded border-slate-300">
+      Peer isolation
+    </label>
+    <div class="col-span-full">
+      <button type="submit"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        Create interface
+      </button>
+    </div>
+  </form>
+  <p class="mt-3 text-xs text-slate-400">
+    With host networking the new UDP port is reachable immediately. The interface is brought up on creation.
+  </p>
+</div>
+
+<div class="rounded-xl bg-white p-5 shadow-sm">
+  <h2 class="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Import existing interface</h2>
+  {% if candidates %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-400">
+        <th class="px-4 py-3 font-semibold">Name</th>
+        <th class="px-4 py-3 font-semibold">State</th>
+        <th class="px-4 py-3 font-semibold">Address</th>
+        <th class="px-4 py-3 font-semibold">Port</th>
+        <th class="px-4 py-3 font-semibold">Peers</th>
+        <th class="px-4 py-3 font-semibold">Endpoint host</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+    {% for c in candidates %}
+      <tr>
+        <td class="px-4 py-3 font-medium">{{ c.name }}</td>
+        <td class="px-4 py-3">
+          {% if c.running %}
+          <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">running</span>
+          {% else %}
+          <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">stopped</span>
+          {% endif %}
+          {% if not c.has_config %}
+          <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">no conf</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 font-mono text-xs">{{ c.address or "-" }}</td>
+        <td class="px-4 py-3">{{ c.listen_port or "-" }}</td>
+        <td class="px-4 py-3">{{ c.peer_count }}</td>
+        <td class="px-4 py-3" colspan="2">
+          <form method="post" action="/interfaces/import" class="flex gap-2">
+            <input type="hidden" name="name" value="{{ c.name }}">
+            <input name="host" required placeholder="vpn.example.com"
+                   class="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            <button type="submit" {% if not c.has_config %}disabled{% endif %}
+                    class="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+              Import
+            </button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="mt-3 text-xs text-slate-400">
+    Importing takes over the wg-quick config: the server key, peers, preshared keys and site subnets are read
+    from the .conf (a timestamped backup is kept). Imported peers have no private key, so config download and QR
+    are unavailable until you rotate their keys. Endpoint host is the public address clients connect to.
+  </p>
+  {% else %}
+  <p class="text-sm text-slate-400">No unmanaged interfaces or configs found in the config directory.</p>
+  {% endif %}
+</div>
+
+<script>
+function confirmDelete(form, name, peerCount) {
+  if (peerCount > 0) {
+    const cascade = confirm("Interface " + name + " has " + peerCount +
+      " peers.\n\nOK = delete interface AND all its peers\nCancel = abort");
+    if (!cascade) return false;
+    form.cascade.value = "true";
+    return true;
+  }
+  return confirm("Delete interface " + name + "?");
+}
+</script>
+{% endblock %}

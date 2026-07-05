@@ -1,4 +1,4 @@
-const REFRESH_MS = 5000;
+let refreshMs = 5000;
 
 function fmtBytes(num) {
   const units = ["B", "KiB", "MiB", "GiB", "TiB"];
@@ -28,39 +28,45 @@ async function refresh() {
     return;
   }
 
-  const online = data.peers.filter((p) => p.online).length;
-  const set = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  };
-  set("peer-count", data.peers.length);
-  set("online-count", online);
-  set("total-rx", fmtBytes(data.interface.total_rx));
-  set("total-tx", fmtBytes(data.interface.total_tx));
+  if (data.meta && data.meta.refresh_seconds) {
+    refreshMs = data.meta.refresh_seconds * 1000;
+  }
 
   const tbody = document.querySelector("#peer-table tbody");
   if (!tbody) return;
   const badgeBase = "rounded-full px-2 py-0.5 text-xs font-medium";
-  tbody.innerHTML = "";
-  for (const p of data.peers) {
-    const tr = document.createElement("tr");
-    tr.className = "hover:bg-slate-50";
-    const badge = p.online
-      ? `<span class="${badgeBase} bg-emerald-100 text-emerald-700">online</span>`
-      : p.enabled
-        ? `<span class="${badgeBase} bg-slate-100 text-slate-500">offline</span>`
-        : `<span class="${badgeBase} bg-red-100 text-red-700">disabled</span>`;
-    tr.innerHTML =
-      `<td class="px-4 py-3"><a href="/peers/${p.id}" class="font-medium text-blue-600 hover:underline"></a></td>` +
-      `<td class="px-4 py-3 font-mono text-xs">${p.address}</td>` +
-      `<td class="px-4 py-3">${badge}</td>` +
-      `<td class="px-4 py-3 text-slate-500">${fmtHandshake(p.latest_handshake)}</td>` +
-      `<td class="px-4 py-3 text-slate-500">${fmtBytes(p.rx_bytes)}</td>` +
-      `<td class="px-4 py-3 text-slate-500">${fmtBytes(p.tx_bytes)}</td>`;
-    tr.querySelector("a").textContent = p.name;
-    tbody.appendChild(tr);
+  const esc = (s) =>
+    String(s).replace(/[&<>"]/g, (ch) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]
+    );
+  let html = "";
+  for (const iface of data.interfaces) {
+    for (const p of iface.peers) {
+      const badge = p.online
+        ? `<span class="${badgeBase} bg-emerald-100 text-emerald-700">online</span>`
+        : p.enabled
+          ? `<span class="${badgeBase} bg-slate-100 text-slate-500">offline</span>`
+          : `<span class="${badgeBase} bg-red-100 text-red-700">disabled</span>`;
+      html +=
+        `<tr class="hover:bg-slate-50">` +
+        `<td class="truncate px-4 py-3"><a href="/peers/${p.id}" class="font-medium text-blue-600 hover:underline">${esc(p.name)}</a></td>` +
+        `<td class="truncate px-4 py-3 text-slate-500">${esc(iface.name)}</td>` +
+        `<td class="truncate px-4 py-3 font-mono text-xs">${esc(p.address)}</td>` +
+        `<td class="px-4 py-3">${badge}</td>` +
+        `<td class="whitespace-nowrap px-4 py-3 text-slate-500 tabular-nums">${fmtHandshake(p.latest_handshake)}</td>` +
+        `<td class="whitespace-nowrap px-4 py-3 text-slate-500 tabular-nums">${fmtBytes(p.rx_bytes)}</td>` +
+        `<td class="whitespace-nowrap px-4 py-3 text-slate-500 tabular-nums">${fmtBytes(p.tx_bytes)}</td>` +
+        `</tr>`;
+    }
+  }
+  if (tbody.dataset.html !== html) {
+    tbody.dataset.html = html;
+    tbody.innerHTML = html;
   }
 }
 
-refresh();
-setInterval(refresh, REFRESH_MS);
+async function loop() {
+  await refresh();
+  setTimeout(loop, refreshMs);
+}
+loop();

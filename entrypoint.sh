@@ -1,26 +1,17 @@
 #!/bin/sh
 set -e
 
-WG_INTERFACE="${WG_INTERFACE:-wg0}"
-WG_SUBNET="${WG_SUBNET:-10.8.0.0/24}"
-OUT_IFACE="$(ip route show default | awk '/default/ {print $5; exit}')"
+# Host network mode shares the host network namespace, so forwarding is
+# enabled here instead of via per-container sysctls.
+sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || \
+  echo "WARN: could not enable net.ipv4.ip_forward, set it on the host"
+sysctl -w net.ipv4.conf.all.src_valid_mark=1 >/dev/null 2>&1 || true
 
-iptables -t nat -C POSTROUTING -s "$WG_SUBNET" -o "$OUT_IFACE" -j MASQUERADE 2>/dev/null \
-  || iptables -t nat -A POSTROUTING -s "$WG_SUBNET" -o "$OUT_IFACE" -j MASQUERADE
-# Peer isolation: block peer-to-peer traffic inside the wg subnet.
-if [ "${WG_PEER_ISOLATION:-false}" = "true" ]; then
-  iptables -C FORWARD -i "$WG_INTERFACE" -o "$WG_INTERFACE" -j DROP 2>/dev/null \
-    || iptables -I FORWARD 1 -i "$WG_INTERFACE" -o "$WG_INTERFACE" -j DROP
-else
-  iptables -D FORWARD -i "$WG_INTERFACE" -o "$WG_INTERFACE" -j DROP 2>/dev/null || true
-fi
-
-iptables -C FORWARD -i "$WG_INTERFACE" -j ACCEPT 2>/dev/null \
-  || iptables -A FORWARD -i "$WG_INTERFACE" -j ACCEPT
-iptables -C FORWARD -o "$WG_INTERFACE" -j ACCEPT 2>/dev/null \
-  || iptables -A FORWARD -o "$WG_INTERFACE" -j ACCEPT
+# NAT and peer isolation rules are managed per interface by the app
+# (app/wireguard/sync.py) when configs are applied.
 
 # Relay wg clients into extra networks (e.g. another wg tunnel on the host).
+WG_SUBNET="${WG_SUBNET:-10.8.0.0/24}"
 OLD_IFS="$IFS"; IFS=','
 for subnet in ${WG_RELAY_SUBNETS:-}; do
   subnet="$(echo "$subnet" | tr -d ' ')"

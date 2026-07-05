@@ -4,44 +4,50 @@
 {% block content %}
 <h1 class="mb-6 text-2xl font-bold">Dashboard</h1>
 
-<div class="mb-8 grid gap-4 sm:grid-cols-3">
+<div id="iface-cards" class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+{% for item in overview %}
   <div class="rounded-xl bg-white p-5 shadow-sm">
-    <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Interface</h3>
+    <h3 class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      Interface
+      {% if item.iface.imported %}
+      <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium normal-case text-amber-700">imported</span>
+      {% endif %}
+    </h3>
     <p class="flex items-center gap-2 text-lg font-semibold">
-      {{ status.name }}
-      {% if status.up %}
+      <a href="/peers?interface={{ item.iface.id }}" class="text-blue-600 hover:underline">{{ item.iface.name }}</a>
+      {% if item.status.up %}
       <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">up</span>
       {% else %}
       <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">down</span>
       {% endif %}
     </p>
     <p class="mt-1 text-sm text-slate-500">
-      <span class="font-mono">{{ server_address }}</span> · Port {{ status.listen_port or settings.wg_port }}
+      <span class="font-mono">{{ server_address(item.iface.subnet) }}</span> · Port {{ item.status.listen_port or item.iface.listen_port }}
+    </p>
+    <p class="mt-1 text-sm text-slate-500">
+      {{ item.online }} / {{ item.peers | length }} peers online ·
+      RX {{ item.status.total_rx | fmt_bytes }} / TX {{ item.status.total_tx | fmt_bytes }}
     </p>
   </div>
-  <div class="rounded-xl bg-white p-5 shadow-sm">
-    <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Peers</h3>
-    <p class="text-lg font-semibold"><span id="peer-count">{{ peers | length }}</span> total</p>
-    <p class="mt-1 text-sm text-slate-500"><span id="online-count">-</span> online</p>
-  </div>
-  <div class="rounded-xl bg-white p-5 shadow-sm">
-    <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Traffic</h3>
-    <p class="text-sm">RX <span id="total-rx" class="font-semibold">{{ status.total_rx | fmt_bytes }}</span></p>
-    <p class="mt-1 text-sm">TX <span id="total-tx" class="font-semibold">{{ status.total_tx | fmt_bytes }}</span></p>
-  </div>
+{% else %}
+  <p class="rounded-xl bg-white p-6 text-center text-slate-400 shadow-sm sm:col-span-2 lg:col-span-3">
+    No interfaces. <a href="/interfaces" class="text-blue-600 hover:underline">Create or import one.</a>
+  </p>
+{% endfor %}
 </div>
 
 <h2 class="mb-3 text-lg font-semibold">Peers</h2>
 <div class="overflow-hidden rounded-xl bg-white shadow-sm">
-  <table id="peer-table" class="w-full text-sm">
+  <table id="peer-table" class="w-full table-fixed text-sm">
     <thead>
       <tr class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-400">
-        <th class="px-4 py-3 font-semibold">Name</th>
-        <th class="px-4 py-3 font-semibold">Address</th>
-        <th class="px-4 py-3 font-semibold">Status</th>
-        <th class="px-4 py-3 font-semibold">Handshake</th>
-        <th class="px-4 py-3 font-semibold">RX</th>
-        <th class="px-4 py-3 font-semibold">TX</th>
+        <th class="w-[18%] px-4 py-3 font-semibold">Name</th>
+        <th class="w-[12%] px-4 py-3 font-semibold">Interface</th>
+        <th class="w-[18%] px-4 py-3 font-semibold">Address</th>
+        <th class="w-[12%] px-4 py-3 font-semibold">Status</th>
+        <th class="w-[14%] px-4 py-3 font-semibold">Handshake</th>
+        <th class="w-[13%] px-4 py-3 font-semibold">RX</th>
+        <th class="w-[13%] px-4 py-3 font-semibold">TX</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-100"></tbody>

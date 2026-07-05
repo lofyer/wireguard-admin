@@ -3,32 +3,125 @@
 {% block breadcrumbs %}<span>/</span> <span>Settings</span>{% endblock %}
 {% block content %}
 <h1 class="mb-6 text-2xl font-bold">Settings</h1>
-<div class="rounded-xl bg-white p-5 shadow-sm">
+
+{% if error %}
+<p class="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</p>
+{% endif %}
+{% if message %}
+<p class="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ message }}</p>
+{% endif %}
+
+<div class="mb-6 rounded-xl bg-white p-5 shadow-sm">
+  <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Monitoring</h2>
+  <form method="post" action="/settings/runtime" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <label class="block text-sm font-medium text-slate-600">Sample interval (s)
+      <input name="traffic_sample_interval" type="number" min="10" max="3600" value="{{ runtime.traffic_sample_interval }}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">Traffic/quota/expiry check frequency.</span>
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Sample retention (days)
+      <input name="traffic_retention_days" type="number" min="0" max="3650" value="{{ runtime.traffic_retention_days }}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">Old samples are pruned. 0 = keep forever.</span>
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Online threshold (s)
+      <input name="online_threshold" type="number" min="30" max="3600" value="{{ runtime.online_threshold }}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">Max handshake age to count a peer online.</span>
+    </label>
+    <label class="block text-sm font-medium text-slate-600">UI refresh (s)
+      <input name="ui_refresh_seconds" type="number" min="2" max="300" value="{{ runtime.ui_refresh_seconds }}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">Dashboard and topology poll interval.</span>
+    </label>
+    <div class="col-span-full">
+      <button type="submit"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        Save
+      </button>
+    </div>
+  </form>
+</div>
+
+<div class="mb-6 rounded-xl bg-white p-5 shadow-sm">
+  <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Host performance tuning</h2>
+  <dl class="mb-4 grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-4">
+    <div class="flex justify-between gap-2 sm:block">
+      <dt class="text-slate-500">UDP rmem_max</dt>
+      <dd class="font-mono text-xs">{{ tuning.rmem_max or "?" }}</dd>
+    </div>
+    <div class="flex justify-between gap-2 sm:block">
+      <dt class="text-slate-500">UDP wmem_max</dt>
+      <dd class="font-mono text-xs">{{ tuning.wmem_max or "?" }}</dd>
+    </div>
+    <div class="flex justify-between gap-2 sm:block">
+      <dt class="text-slate-500">netdev_max_backlog</dt>
+      <dd class="font-mono text-xs">{{ tuning.netdev_max_backlog or "?" }}</dd>
+    </div>
+    <div class="flex justify-between gap-2 sm:block">
+      <dt class="text-slate-500">GRO forwarding ({{ tuning.out_interface or "?" }})</dt>
+      <dd class="font-mono text-xs">{{ tuning.gro_forwarding or "unknown" }}</dd>
+    </div>
+  </dl>
+  <form method="post" action="/settings/tuning" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <label class="block text-sm font-medium text-slate-600">UDP buffers (MiB)
+      <input name="udp_buffer_mib" type="number" min="0" max="64" placeholder="16 recommended"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">rmem_max + wmem_max. Helps &gt;500 Mbps tunnels.</span>
+    </label>
+    <label class="block text-sm font-medium text-slate-600">netdev_max_backlog
+      <input name="netdev_backlog" type="number" min="0" max="100000" placeholder="e.g. 16384"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">Receive queue for high packet rates.</span>
+    </label>
+    <label class="block text-sm font-medium text-slate-600">UDP GRO forwarding
+      <select name="gro_forwarding"
+              class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+        <option value="">leave unchanged</option>
+        <option value="on">enable</option>
+        <option value="off">disable</option>
+      </select>
+      <span class="mt-1 block text-xs text-slate-400">Boosts relay/site-to-site throughput.</span>
+    </label>
+    <div class="col-span-full">
+      <button type="submit"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        Apply
+      </button>
+    </div>
+  </form>
+  <p class="mt-3 text-xs text-slate-400">
+    Applied immediately to the running kernel (requires host network mode and NET_ADMIN).
+    Empty fields are left unchanged. Settings do not survive host reboots; persist them in
+    /etc/sysctl.d on the host if needed.
+  </p>
+</div>
+
+<div class="mb-6 rounded-xl bg-white p-5 shadow-sm">
+  <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Interfaces</h2>
   <dl class="divide-y divide-slate-100 text-sm">
+    {% for iface in interfaces %}
     <div class="flex justify-between gap-4 py-3">
-      <dt class="text-slate-500">Interface</dt>
-      <dd class="font-medium">{{ settings.wg_interface }}</dd>
+      <dt class="text-slate-500">{{ iface.name }}</dt>
+      <dd class="text-right">
+        <span class="font-mono text-xs">{{ server_address(iface.subnet) }}</span>
+        · {{ iface.host }}:{{ iface.listen_port }}
+        <span class="ml-2 block break-all font-mono text-xs text-slate-400 sm:inline">{{ iface.public_key }}</span>
+      </dd>
     </div>
-    <div class="flex justify-between gap-4 py-3">
-      <dt class="text-slate-500">Server address</dt>
-      <dd class="font-mono text-xs">{{ server_address }}</dd>
-    </div>
-    <div class="flex justify-between gap-4 py-3">
-      <dt class="shrink-0 text-slate-500">Server public key</dt>
-      <dd class="break-all text-right font-mono text-xs">{{ server_public }}</dd>
-    </div>
-    <div class="flex justify-between gap-4 py-3">
-      <dt class="text-slate-500">Endpoint host</dt>
-      <dd class="font-medium">{{ settings.wg_host }}</dd>
-    </div>
-    <div class="flex justify-between gap-4 py-3">
-      <dt class="text-slate-500">Listen port</dt>
-      <dd class="font-medium">{{ settings.wg_port }}</dd>
-    </div>
-    <div class="flex justify-between gap-4 py-3">
-      <dt class="text-slate-500">Subnet</dt>
-      <dd class="font-mono text-xs">{{ settings.wg_subnet }}</dd>
-    </div>
+    {% else %}
+    <p class="py-3 text-slate-400">No interfaces configured.</p>
+    {% endfor %}
+  </dl>
+  <p class="mt-2 text-xs text-slate-400">
+    Interfaces are managed in the database. Edit them on the
+    <a href="/interfaces" class="text-blue-600 hover:underline">Interfaces</a> page.
+  </p>
+</div>
+
+<div class="rounded-xl bg-white p-5 shadow-sm">
+  <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Defaults for new interfaces</h2>
+  <dl class="divide-y divide-slate-100 text-sm">
     <div class="flex justify-between gap-4 py-3">
       <dt class="text-slate-500">Client DNS</dt>
       <dd class="font-medium">{{ settings.wg_dns }}</dd>
@@ -42,10 +135,13 @@
       <dd class="font-medium">{{ settings.wg_persistent_keepalive }}s</dd>
     </div>
     <div class="flex justify-between gap-4 py-3">
-      <dt class="text-slate-500">Peer isolation</dt>
-      <dd class="font-medium">{{ "on" if settings.wg_peer_isolation else "off" }}</dd>
+      <dt class="text-slate-500">Config directory</dt>
+      <dd class="font-mono text-xs">{{ settings.wg_config_dir }}</dd>
     </div>
   </dl>
-  <p class="mt-4 text-xs text-slate-400">Settings are read from environment variables / .env and require a restart to change.</p>
+  <p class="mt-4 text-xs text-slate-400">
+    These defaults come from environment variables / .env and are used when creating the first
+    interface on startup and as fallbacks for new interfaces.
+  </p>
 </div>
 {% endblock %}
