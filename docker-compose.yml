@@ -6,7 +6,8 @@ services:
     cap_add:
       - NET_ADMIN
     # Host networking: new interfaces and their UDP ports work without
-    # editing port mappings. The admin UI listens on host port 8000.
+    # editing port mappings. The admin UI listens on host port WEB_PORT
+    # (default 8000).
     # Requires net.ipv4.ip_forward=1 on the host (sysctls cannot be set
     # per-container in host network mode); entrypoint.sh enables it.
     network_mode: host
@@ -21,6 +22,7 @@ services:
       WG_ALLOWED_IPS: ${WG_ALLOWED_IPS:-0.0.0.0/0, ::/0}
       WG_RELAY_SUBNETS: ${WG_RELAY_SUBNETS:-}
       WG_PEER_ISOLATION: ${WG_PEER_ISOLATION:-false}
+      WEB_PORT: ${WEB_PORT:-8000}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}

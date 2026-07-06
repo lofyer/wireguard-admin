@@ -23,4 +23,4 @@ for subnet in ${WG_RELAY_SUBNETS:-}; do
 done
 IFS="$OLD_IFS"
 
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+exec uvicorn app.main:app --host 0.0.0.0 --port "${WEB_PORT:-8000}"
