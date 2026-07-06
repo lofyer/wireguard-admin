@@ -88,21 +88,23 @@
         <input name="persistent_keepalive" type="number" min="0" max="3600" value="{{ iface.persistent_keepalive }}"
                class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
       </label>
-      <label class="flex items-end gap-2 pb-2 text-sm font-medium text-slate-600">
-        <input name="peer_isolation" type="checkbox" value="true" {% if iface.peer_isolation %}checked{% endif %}
-               class="h-4 w-4 rounded border-slate-300">
-        Peer isolation
+      <label class="block text-sm font-medium text-slate-600">Peer isolation
+        <span class="mt-1 flex items-center gap-2 py-2">
+          <input name="peer_isolation" type="checkbox" value="true" {% if iface.peer_isolation %}checked{% endif %}
+                 class="h-4 w-4 rounded border-slate-300">
+          <span class="text-xs font-normal text-slate-400">Block peer-to-peer traffic</span>
+        </span>
       </label>
       <label class="block text-sm font-medium text-slate-600">MTU
         <input name="mtu" type="number" min="0" max="1500" value="{{ iface.mtu or '' }}" placeholder="1420 (default)"
                class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
         <span class="mt-1 block text-xs text-slate-400">Lower for PPPoE (1412) or nested tunnels (1340). 0 = wg default.</span>
       </label>
-      <label class="flex items-end gap-2 pb-2 text-sm font-medium text-slate-600">
-        <input name="mss_clamp" type="checkbox" value="true" {% if iface.mss_clamp %}checked{% endif %}
-               class="h-4 w-4 rounded border-slate-300">
-        <span>MSS clamping
-          <span class="block text-xs font-normal text-slate-400">Fixes "ping works but pages hang"</span>
+      <label class="block text-sm font-medium text-slate-600">MSS clamping
+        <span class="mt-1 flex items-center gap-2 py-2">
+          <input name="mss_clamp" type="checkbox" value="true" {% if iface.mss_clamp %}checked{% endif %}
+                 class="h-4 w-4 rounded border-slate-300">
+          <span class="text-xs font-normal text-slate-400">Fixes "ping works but pages hang"</span>
         </span>
       </label>
       <label class="block text-sm font-medium text-slate-600">FwMark
@@ -118,11 +120,12 @@
       <label class="block text-sm font-medium text-slate-600 sm:col-span-2 lg:col-span-1">PostUp commands
         <textarea name="post_up" rows="2" placeholder="one command per line"
                   class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">{{ iface.post_up }}</textarea>
+        <span class="mt-1 block text-xs text-slate-400">Run as root by wg-quick on interface up.</span>
       </label>
       <label class="block text-sm font-medium text-slate-600 sm:col-span-2 lg:col-span-1">PostDown commands
         <textarea name="post_down" rows="2" placeholder="one command per line"
                   class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">{{ iface.post_down }}</textarea>
-        <span class="mt-1 block text-xs text-slate-400">Run as root by wg-quick on interface up/down.</span>
+        <span class="mt-1 block text-xs text-slate-400">Run as root by wg-quick on interface down.</span>
       </label>
       <div class="col-span-full">
         <button type="submit"
@@ -173,9 +176,11 @@
       <input name="persistent_keepalive" type="number" min="0" max="3600" value="25"
              class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
     </label>
-    <label class="flex items-end gap-2 pb-2 text-sm font-medium text-slate-600">
-      <input name="peer_isolation" type="checkbox" value="true" class="h-4 w-4 rounded border-slate-300">
-      Peer isolation
+    <label class="block text-sm font-medium text-slate-600">Peer isolation
+      <span class="mt-1 flex items-center gap-2 py-2">
+        <input name="peer_isolation" type="checkbox" value="true" class="h-4 w-4 rounded border-slate-300">
+        <span class="text-xs font-normal text-slate-400">Block peer-to-peer traffic</span>
+      </span>
     </label>
     <div class="col-span-full">
       <button type="submit"

@@ -5,7 +5,7 @@
 {% if error %}
 <p class="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</p>
 {% endif %}
-<div class="mb-6 flex items-center justify-between">
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
   <h1 class="flex items-center gap-2 text-2xl font-bold">
     {{ peer.name }}
     <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{{ iface.name }}</span>
@@ -13,7 +13,7 @@
     <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">imported</span>
     {% endif %}
   </h1>
-  <div class="flex gap-2">
+  <div class="flex flex-wrap gap-2">
     <form method="post" action="/peers/{{ peer.id }}/toggle">
       <button type="submit"
               class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
@@ -48,7 +48,7 @@
   <div class="rounded-xl bg-white p-5 shadow-sm">
     <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Details</h3>
     <dl class="space-y-2 text-sm">
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Address</dt>
         <dd class="font-mono text-xs">{{ peer.address }}</dd>
       </div>
@@ -56,7 +56,7 @@
         <dt class="text-slate-500">Public key</dt>
         <dd class="mt-1 break-all font-mono text-xs text-slate-600">{{ peer.public_key }}</dd>
       </div>
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Enabled</dt>
         <dd>
           {% if peer.enabled %}
@@ -66,17 +66,17 @@
           {% endif %}
         </dd>
       </div>
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Created</dt>
         <dd>{{ peer.created_at.strftime("%Y-%m-%d %H:%M") }}</dd>
       </div>
       {% if peer.expires_at %}
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Expires</dt>
         <dd>{{ peer.expires_at.strftime("%Y-%m-%d %H:%M") }}</dd>
       </div>
       {% endif %}
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Usage</dt>
         <dd>
           {{ peer.cum_total | fmt_bytes }}
@@ -88,49 +88,13 @@
         </dd>
       </div>
     </dl>
-    <form method="post" action="/peers/{{ peer.id }}/update" class="mt-4 space-y-3 border-t border-slate-100 pt-4">
-      <label class="block text-sm font-medium text-slate-600">Note
-        <input name="note" value="{{ peer.note }}"
-               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-      </label>
-      <label class="block text-sm font-medium text-slate-600">DNS
-        <input name="dns" value="{{ peer.dns }}" placeholder="server default"
-               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-      </label>
-      <label class="block text-sm font-medium text-slate-600">Quota (GiB)
-        <input name="quota_gib" type="number" step="0.1" min="0" placeholder="unlimited"
-               value="{{ '%.1f' % (peer.quota_bytes / 1073741824) if peer.quota_bytes else '' }}"
-               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-      </label>
-      <label class="block text-sm font-medium text-slate-600">Keepalive (s)
-        <input name="persistent_keepalive" type="number" min="0" max="3600"
-               value="{{ peer.persistent_keepalive if peer.persistent_keepalive is not none else '' }}"
-               placeholder="interface default ({{ iface.persistent_keepalive }})"
-               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-        <span class="mt-1 block text-xs text-slate-400">0 disables keepalive (fixed-IP site-to-site peers). Empty = interface default.</span>
-      </label>
-      <label class="block text-sm font-medium text-slate-600">Site subnets behind this peer
-        <input name="extra_allowed_ips" value="{{ peer.extra_allowed_ips }}" placeholder="e.g. 192.168.5.0/24"
-               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-        <span class="mt-1 block text-xs text-slate-400">Server-side AllowedIPs: routes these networks to this peer (site-to-site). Peer must forward traffic.</span>
-      </label>
-      <label class="block text-sm font-medium text-slate-600">Client routes (AllowedIPs)
-        <input name="client_allowed_ips" value="{{ peer.client_allowed_ips }}" placeholder="server default"
-               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-        <span class="mt-1 block text-xs text-slate-400">What this client routes through the tunnel. Empty = server default. Full tunnel: 0.0.0.0/0, ::/0</span>
-      </label>
-      <button type="submit"
-              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-        Save
-      </button>
-    </form>
   </div>
 
   <div class="rounded-xl bg-white p-5 shadow-sm">
     <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Live status</h3>
     {% if peer_status %}
     <dl class="space-y-2 text-sm">
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Status</dt>
         <dd>
           {% if peer_status.online %}
@@ -140,15 +104,15 @@
           {% endif %}
         </dd>
       </div>
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Endpoint</dt>
         <dd class="font-mono text-xs">{{ peer_status.endpoint or "-" }}</dd>
       </div>
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Handshake</dt>
         <dd>{{ peer_status.latest_handshake.strftime("%Y-%m-%d %H:%M:%S") if peer_status.latest_handshake else "never" }}</dd>
       </div>
-      <div class="flex justify-between gap-2">
+      <div class="flex items-baseline justify-between gap-2">
         <dt class="text-slate-500">Session traffic</dt>
         <dd>RX {{ peer_status.rx_bytes | fmt_bytes }} / TX {{ peer_status.tx_bytes | fmt_bytes }}</dd>
       </div>
@@ -190,6 +154,48 @@
     </form>
     {% endif %}
   </div>
+</div>
+
+<div class="mt-4 rounded-xl bg-white p-5 shadow-sm">
+  <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Edit</h3>
+  <form method="post" action="/peers/{{ peer.id }}/update" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <label class="block text-sm font-medium text-slate-600">Note
+      <input name="note" value="{{ peer.note }}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">DNS
+      <input name="dns" value="{{ peer.dns }}" placeholder="server default"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Quota (GiB)
+      <input name="quota_gib" type="number" step="0.1" min="0" placeholder="unlimited"
+             value="{{ '%.1f' % (peer.quota_bytes / 1073741824) if peer.quota_bytes else '' }}"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Keepalive (s)
+      <input name="persistent_keepalive" type="number" min="0" max="3600"
+             value="{{ peer.persistent_keepalive if peer.persistent_keepalive is not none else '' }}"
+             placeholder="interface default ({{ iface.persistent_keepalive }})"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">0 disables keepalive (fixed-IP site-to-site peers). Empty = interface default.</span>
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Site subnets behind this peer
+      <input name="extra_allowed_ips" value="{{ peer.extra_allowed_ips }}" placeholder="e.g. 192.168.5.0/24"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">Server-side AllowedIPs: routes these networks to this peer (site-to-site). Peer must forward traffic.</span>
+    </label>
+    <label class="block text-sm font-medium text-slate-600">Client routes (AllowedIPs)
+      <input name="client_allowed_ips" value="{{ peer.client_allowed_ips }}" placeholder="server default"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <span class="mt-1 block text-xs text-slate-400">What this client routes through the tunnel. Empty = server default. Full tunnel: 0.0.0.0/0, ::/0</span>
+    </label>
+    <div class="col-span-full">
+      <button type="submit"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        Save
+      </button>
+    </div>
+  </form>
 </div>
 
 {% if client_config %}
