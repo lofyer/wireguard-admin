@@ -1,6 +1,6 @@
 services:
   wireguard-admin:
-    build: .
+    image: lofyer/wireguard-admin:latest
     container_name: wireguard-admin
     restart: unless-stopped
     cap_add:
